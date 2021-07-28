@@ -14,10 +14,12 @@ public class AccountServiceImpl implements IAccountService{
     private AccountMapper accountMapper;
 
     @Override
-    public void run() {
+    public List<Account> queryAll() {
 
         List<Account> all = accountMapper.findAll();
 
         System.out.println(all);
+
+        return all;
     }
 }
