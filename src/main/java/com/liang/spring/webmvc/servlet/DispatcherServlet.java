@@ -1,5 +1,7 @@
 package com.liang.spring.webmvc.servlet;
 
+import com.liang.spring.core.context.AnnotationApplicationContext;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -16,7 +18,10 @@ public class DispatcherServlet extends HttpServlet {
 
         doLoadConfig(contextConfigLocation);
 
+        initContext(contextConfigLocation);
+
     }
+
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -32,6 +37,14 @@ public class DispatcherServlet extends HttpServlet {
     void doLoadConfig(String contextConfigLocation){
 
 
+
+    }
+
+
+    //初始化容器
+    private void initContext(String contextConfigLocation) {
+
+        new AnnotationApplicationContext(contextConfigLocation);
 
     }
 }

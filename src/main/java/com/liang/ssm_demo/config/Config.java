@@ -1,18 +1,32 @@
 package com.liang.ssm_demo.config;
 
-import com.liang.mybatis.spring.SpringSqlSessionFactoryBean;
+import com.liang.mybatis.core.io.Resources;
+import com.liang.mybatis.core.sqlSession.SqlSessionFactory;
+import com.liang.mybatis.core.sqlSession.SqlSessionFactoryBuilder;
 import com.liang.spring.core.annotation.Bean;
 import com.liang.spring.core.annotation.Configuration;
+import com.liang.spring.core.annotation.Value;
+
+import java.io.InputStream;
 
 @Configuration
 public class Config {
 
+    @Value("${mybatis.mapper.mapperScanPackage}")
+    private String mapperScanPackage;
+
+
     @Bean
-    public SpringSqlSessionFactoryBean springSqlSessionFactoryBean(){
+    public SqlSessionFactory sqlSessionFactory() throws Exception {
 
-        SpringSqlSessionFactoryBean springSqlSessionFactoryBean = new SpringSqlSessionFactoryBean();
+        InputStream resourceAsStream = Resources.getResourceAsStream(mapperScanPackage);
 
-        return springSqlSessionFactoryBean;
+        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(resourceAsStream);
+
+        return sqlSessionFactory;
+
     }
+
+
 
 }

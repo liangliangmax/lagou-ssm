@@ -1,0 +1,29 @@
+<mapper namespace = "com.liang.ssm_demo.mapper.AccountMapper">
+
+
+	<select id="getOne" parameterType = "com.liang.mybatis.test.entity.User" resultType = "com.liang.mybatis.test.entity.User">
+
+		select * from user where id = #{id} and username = #{username}
+	</select>
+
+
+	<select id="getList" resultType = "com.liang.mybatis.test.entity.User">
+
+		select * from user
+	</select>
+
+	<insert id="insert" parameterType = "com.liang.mybatis.test.entity.User">
+		insert into user (id,username) values (#{id},#{username})
+	</insert>
+
+	<update id="update" parameterType = "com.liang.mybatis.test.entity.User">
+		update user set username = #{username} where id = #{id}
+
+	</update>
+
+	<delete id = "delete" parameterType = "com.liang.mybatis.test.entity.User">
+
+		delete from user where id = #{id}
+	</delete>
+
+</mapper>
