@@ -1,7 +1,7 @@
 package com.liang.mybatis.core.config;
 
 import com.liang.mybatis.core.io.Resources;
-import com.liang.mybatis.core.pojo.Configuration;
+import com.liang.mybatis.core.pojo.MybatisConfiguration;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -21,11 +21,11 @@ import java.util.Properties;
  */
 public class XMLConfigBuilder {
 
-    private Configuration configuration;
+    private MybatisConfiguration configuration;
 
 
     public XMLConfigBuilder() {
-        this.configuration = new Configuration();
+        this.configuration = new MybatisConfiguration();
     }
 
     /**
@@ -33,31 +33,12 @@ public class XMLConfigBuilder {
      * @param inputStream
      * @return
      */
-    public Configuration parseConfig(InputStream inputStream) throws DocumentException, PropertyVetoException {
+    public MybatisConfiguration parseConfig(InputStream inputStream) throws DocumentException, PropertyVetoException {
 
 
         Document document = new SAXReader().read(inputStream);
 
         Element rootElement = document.getRootElement();
-
-        List<Element> list = rootElement.selectNodes("//property");
-
-        Properties properties = new Properties();
-        for (Element element : list) {
-
-            String name = element.attributeValue("name");
-            String value = element.attributeValue("value");
-
-            properties.setProperty(name,value);
-        }
-
-        ComboPooledDataSource comboPooledDataSource = new ComboPooledDataSource();
-        comboPooledDataSource.setDriverClass(properties.getProperty("driverClass"));
-        comboPooledDataSource.setJdbcUrl(properties.getProperty("url"));
-        comboPooledDataSource.setUser(properties.getProperty("username"));
-        comboPooledDataSource.setPassword(properties.getProperty("password"));
-
-        configuration.setDataSource(comboPooledDataSource);
 
 
         // 开始解析各种mapper.xml

@@ -1,5 +1,8 @@
 package com.liang.spring.core.context;
 
+import com.liang.mybatis.core.annotation.Mapper;
+import com.liang.mybatis.core.sqlSession.SqlSessionFactory;
+import com.liang.mybatis.core.utils.MapperProxyFactory;
 import com.liang.spring.core.ApplicationContextAware;
 import com.liang.spring.core.annotation.*;
 import com.liang.spring.core.entity.BeanDefinition;
@@ -8,6 +11,7 @@ import com.liang.spring.core.transaction.TransactionManager;
 import com.liang.spring.core.transaction.TransactionalProxyFactory;
 import com.liang.spring.core.util.GenerateBeanNameUtil;
 import com.liang.spring.core.util.ReflectionUtils;
+import com.liang.ssm_demo.mapper.AccountMapper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -140,9 +144,15 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
                     }
                 }
 
+                if(clazz.isAnnotationPresent(Mapper.class)){
+                    beanDefinition.setCreateProxy(true);
+                }
+
                 beanDefinitionMap.put(id,beanDefinition);
             }
         }
+
+        System.out.println(111);
     }
 
 
@@ -158,6 +168,7 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
             Class beanClass = beanDefinition.getClazz();
 
             try {
+
                 Object bean = beanClass.newInstance();
 
                 //这种是没有依赖并且不需要创建代理对象，可以直接创建bean
@@ -170,7 +181,9 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
                 }else {
                     //需要创建代理对象的bean
                     createProxyObject.put(key,bean);
+
                 }
+
             } catch (InstantiationException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
@@ -180,7 +193,10 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
         });
 
 
+        System.out.println(111);
     }
+
+
 
     /**
      * 填充bean里面的属性
@@ -218,38 +234,8 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
 
         //先填充直接生成的bean
         singletonObject.forEach((beanName,bean)->{
-            Field[] declaredFields = bean.getClass().getDeclaredFields();
-
-            for (Field declaredField : declaredFields) {
-
-                if(declaredField.isAnnotationPresent(Value.class)){
-                    Value valueAnno = declaredField.getAnnotation(Value.class);
-
-                    String regex = valueAnno.value();
-
-                    if(StringUtils.isBlank(regex)){
-
-                        throw new RuntimeException(declaredField.getName()+"上占位符信息不能为空");
-                    }
-
-                    //如果没用表达式，直接写的字符串，则直接将字符串赋值给属性
-                    if(bean !=null){
-                        if(!regex.contains("${")){
-                            ReflectionUtils.setFieldValue(bean,declaredField.getName(),regex);
-                        }else {
-                            String propKey = regex.replace("${", "").replace("}", "");
-
-                            String propValue = getProperties(propKey);
-
-                            if(StringUtils.isBlank(propValue)){
-                                throw new RuntimeException("无法找到"+propKey+"对应的配置文件");
-                            }
-                            ReflectionUtils.setFieldValue(bean,declaredField.getName(),propValue);
-                        }
-                    }
-
-                }
-            }
+            //处理@Value标记的字段
+            processValueAnno(bean);
 
             generateBeanAnnotation(bean);
         });
@@ -257,6 +243,10 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
         //2.填充有依赖的bean
         notFinishedObject.forEach((beanName,bean)->{
 
+            //处理@Value标记的字段
+            processValueAnno(bean);
+
+            //处理@Autowired的字段
             injectionAutowired(beanName, bean);
 
             //当autowired完成之后，就可以去实例化之前没有实例化的bean标签
@@ -269,44 +259,85 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
             Class<?> beanClass = bean.getClass();
 
             //如果有接口，则用jdk的动态代理
-            if(beanClass.getInterfaces().length!=0){
-                TransactionalProxyFactory transactionalProxyFactory = new TransactionalProxyFactory();
-
-                TransactionManager transactionManager = (TransactionManager) getBean(TransactionManager.class);
-                if(transactionManager == null){
-                    throw  new RuntimeException("需要定义transactionManager");
-                }
-
-                transactionalProxyFactory.setTransactionManager(transactionManager);
-
-                injectionAutowired(beanName,bean);
-
-                Object jdkProxy = transactionalProxyFactory.getJdkProxy(bean);
-
-                singletonObject.put(beanName,jdkProxy);
-                createProxyObject.remove(beanName);
-
-            }else {
-                //如果没有接口，则用cglib的动态代理
-                TransactionalProxyFactory transactionalProxyFactory = new TransactionalProxyFactory();
-
-                TransactionManager transactionManager = (TransactionManager) getBean(TransactionManager.class);
-                if(transactionManager == null){
-                    throw  new RuntimeException("需要定义transactionManager");
-                }
-
-                transactionalProxyFactory.setTransactionManager(transactionManager);
-
-                injectionAutowired(beanName,bean);
-
-                Object jdkProxy = transactionalProxyFactory.getCglibProxy(bean);
-
-                singletonObject.put(beanName,jdkProxy);
-                createProxyObject.remove(beanName);
-            }
+            doCreateTransactionalProxy(beanName, bean, beanClass);
 
         });
-        System.out.println(111);
+
+    }
+
+    private void processValueAnno(Object bean) {
+        Field[] declaredFields = bean.getClass().getDeclaredFields();
+
+        for (Field declaredField : declaredFields) {
+
+            if(declaredField.isAnnotationPresent(Value.class)){
+                Value valueAnno = declaredField.getAnnotation(Value.class);
+
+                String regex = valueAnno.value();
+
+                if(StringUtils.isBlank(regex)){
+
+                    throw new RuntimeException(declaredField.getName()+"上占位符信息不能为空");
+                }
+
+                //如果没用表达式，直接写的字符串，则直接将字符串赋值给属性
+                if(bean !=null){
+                    if(!regex.contains("${")){
+                        ReflectionUtils.setFieldValue(bean,declaredField.getName(),regex);
+                    }else {
+                        String propKey = regex.replace("${", "").replace("}", "");
+
+                        String propValue = getProperties(propKey);
+
+                        if(StringUtils.isBlank(propValue)){
+                            throw new RuntimeException("无法找到"+propKey+"对应的配置文件");
+                        }
+                        ReflectionUtils.setFieldValue(bean,declaredField.getName(),propValue);
+                    }
+                }
+
+            }
+        }
+    }
+
+    //创建事务的代理对象
+    private void doCreateTransactionalProxy(String beanName, Object bean, Class<?> beanClass) {
+        if(beanClass.getInterfaces().length!=0){
+            TransactionalProxyFactory transactionalProxyFactory = new TransactionalProxyFactory();
+
+            TransactionManager transactionManager = (TransactionManager) getBean(TransactionManager.class);
+            if(transactionManager == null){
+                throw  new RuntimeException("需要定义transactionManager");
+            }
+
+            transactionalProxyFactory.setTransactionManager(transactionManager);
+
+            injectionAutowired(beanName,bean);
+
+            Object jdkProxy = transactionalProxyFactory.getJdkProxy(bean);
+
+            singletonObject.put(beanName,jdkProxy);
+            createProxyObject.remove(beanName);
+
+        }else {
+
+            //如果没有接口，则用cglib的动态代理
+            TransactionalProxyFactory transactionalProxyFactory = new TransactionalProxyFactory();
+
+            TransactionManager transactionManager = (TransactionManager) getBean(TransactionManager.class);
+            if(transactionManager == null){
+                throw  new RuntimeException("需要定义transactionManager");
+            }
+
+            transactionalProxyFactory.setTransactionManager(transactionManager);
+
+            injectionAutowired(beanName,bean);
+
+            Object jdkProxy = transactionalProxyFactory.getCglibProxy(bean);
+
+            singletonObject.put(beanName,jdkProxy);
+            createProxyObject.remove(beanName);
+        }
     }
 
     /**
@@ -411,7 +442,30 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
 
         }
 
+        //生成mapper代理对象
+        Set<Class<?>> classes = getClasses();
+
+        for (Class<?> aClass : classes) {
+
+            //如果是mapper的类，是不能被实例化出来的，因为没有实现类，需要直接创建代理类
+            if(aClass.isAnnotationPresent(Mapper.class)){
+                doCreateMapperProxy(GenerateBeanNameUtil.generateBeanName(aClass),aClass);
+            }
+        }
+
     }
 
+
+    //创建mapper的代理对象
+    private void doCreateMapperProxy(String beanName, Class<?> beanClass) {
+
+        MapperProxyFactory mapperProxyFactory = new MapperProxyFactory();
+        mapperProxyFactory.setSqlSessionFactory((SqlSessionFactory) singletonObject.get("sqlSessionFactory"));
+
+        Object cglibProxy = mapperProxyFactory.getCglibProxy(beanClass);
+
+        singletonObject.put(beanName,cglibProxy);
+
+    }
 
 }

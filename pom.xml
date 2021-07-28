@@ -82,10 +82,11 @@
             <version>1.7.30</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/c3p0/c3p0 -->
         <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjweaver</artifactId>
-            <version>1.7.1</version>
+            <groupId>c3p0</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.1.2</version>
         </dependency>
 
     </dependencies>

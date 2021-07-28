@@ -1,7 +1,7 @@
 package com.liang.mybatis.core.config;
 
 import com.liang.mybatis.core.constant.OpType;
-import com.liang.mybatis.core.pojo.Configuration;
+import com.liang.mybatis.core.pojo.MybatisConfiguration;
 import com.liang.mybatis.core.pojo.MappedStatement;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -13,9 +13,9 @@ import java.util.List;
 
 public class XmlMapperBuilder {
 
-    private Configuration configuration;
+    private MybatisConfiguration configuration;
 
-    public XmlMapperBuilder(Configuration configuration) {
+    public XmlMapperBuilder(MybatisConfiguration configuration) {
         this.configuration = configuration;
     }
 

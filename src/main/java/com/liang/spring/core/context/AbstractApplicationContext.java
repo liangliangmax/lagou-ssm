@@ -1,11 +1,13 @@
 package com.liang.spring.core.context;
 
+import com.liang.mybatis.core.annotation.Mapper;
 import com.liang.spring.core.annotation.Component;
 import com.liang.spring.core.annotation.Configuration;
 import com.liang.spring.core.annotation.Repository;
 import com.liang.spring.core.annotation.Service;
 import com.liang.spring.core.entity.BeanDefinition;
 import com.liang.spring.core.util.CollectionsUtil;
+import com.liang.spring.webmvc.annotation.Controller;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -112,7 +114,10 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
     static boolean isNeedInit(Class clazz){
 
         return clazz.isAnnotationPresent(Configuration.class) || clazz.isAnnotationPresent(Component.class)
-                || clazz.isAnnotationPresent(Service.class) || clazz.isAnnotationPresent(Repository.class);
+                || clazz.isAnnotationPresent(Service.class) || clazz.isAnnotationPresent(Repository.class)
+                || clazz.isAnnotationPresent(Controller.class)
+
+                ;
     }
 
 

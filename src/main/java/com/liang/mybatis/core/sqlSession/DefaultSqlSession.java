@@ -1,7 +1,7 @@
 package com.liang.mybatis.core.sqlSession;
 
 import com.liang.mybatis.core.constant.OpType;
-import com.liang.mybatis.core.pojo.Configuration;
+import com.liang.mybatis.core.pojo.MybatisConfiguration;
 import com.liang.mybatis.core.pojo.MappedStatement;
 
 import java.lang.reflect.*;
@@ -9,9 +9,9 @@ import java.util.List;
 
 public class DefaultSqlSession implements SqlSession {
 
-    private Configuration configuration;
+    private MybatisConfiguration configuration;
 
-    public DefaultSqlSession(Configuration configuration) {
+    public DefaultSqlSession(MybatisConfiguration configuration) {
         this.configuration = configuration;
     }
 

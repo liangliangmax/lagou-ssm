@@ -2,7 +2,7 @@ package com.liang.mybatis.core.sqlSession;
 
 import com.liang.mybatis.core.config.BoundSql;
 import com.liang.mybatis.core.constant.OpType;
-import com.liang.mybatis.core.pojo.Configuration;
+import com.liang.mybatis.core.pojo.MybatisConfiguration;
 import com.liang.mybatis.core.pojo.MappedStatement;
 import com.liang.mybatis.core.utils.GenericTokenParser;
 import com.liang.mybatis.core.utils.ParameterMapping;
@@ -20,7 +20,7 @@ public class SimpleExecutor implements Executor {
 
 
     @Override
-    public <E> List<E> query(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
+    public <E> List<E> query(MybatisConfiguration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
         //返回集合
         ArrayList<E> objects = new ArrayList<>();
 
@@ -62,18 +62,18 @@ public class SimpleExecutor implements Executor {
     }
 
     @Override
-    public int insert(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
+    public int insert(MybatisConfiguration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
 
         return (int) doExecute(configuration, mappedStatement, params, OpType.INSERT);
     }
 
     @Override
-    public int update(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
+    public int update(MybatisConfiguration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
         return (int) doExecute(configuration, mappedStatement, params, OpType.UPDATE);
     }
 
     @Override
-    public int delete(Configuration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
+    public int delete(MybatisConfiguration configuration, MappedStatement mappedStatement, Object... params) throws Exception {
         return (int) doExecute(configuration, mappedStatement, params, OpType.DELETE);
     }
 
@@ -92,7 +92,7 @@ public class SimpleExecutor implements Executor {
      * @throws NoSuchFieldException
      * @throws IllegalAccessException
      */
-    private Object doExecute(Configuration configuration, MappedStatement mappedStatement, Object[] params, OpType opType) throws SQLException, ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+    private Object doExecute(MybatisConfiguration configuration, MappedStatement mappedStatement, Object[] params, OpType opType) throws SQLException, ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
         Connection connection = configuration.getDataSource().getConnection();
 
         String sql = mappedStatement.getSql();

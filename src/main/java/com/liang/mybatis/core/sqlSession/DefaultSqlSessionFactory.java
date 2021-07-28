@@ -1,12 +1,12 @@
 package com.liang.mybatis.core.sqlSession;
 
-import com.liang.mybatis.core.pojo.Configuration;
+import com.liang.mybatis.core.pojo.MybatisConfiguration;
 
 public class DefaultSqlSessionFactory implements SqlSessionFactory {
 
-    private Configuration configuration;
+    private MybatisConfiguration configuration;
 
-    public DefaultSqlSessionFactory(Configuration configuration) {
+    public DefaultSqlSessionFactory(MybatisConfiguration configuration) {
         this.configuration = configuration;
     }
 
