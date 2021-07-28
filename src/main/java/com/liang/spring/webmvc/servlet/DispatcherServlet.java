@@ -2,6 +2,7 @@ package com.liang.spring.webmvc.servlet;
 
 import com.liang.mybatis.core.io.Resources;
 import com.liang.spring.core.context.AnnotationApplicationContext;
+import com.liang.ssm_demo.service.IAccountService;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.ServletConfig;
@@ -65,7 +66,11 @@ public class DispatcherServlet extends HttpServlet {
 
             properties.load(resourceAsStream);
 
-            new AnnotationApplicationContext(properties.getProperty("scanPackage"));
+            AnnotationApplicationContext annotationApplicationContext = new AnnotationApplicationContext(properties.getProperty("scanPackage"));
+
+            IAccountService accountService = (IAccountService)annotationApplicationContext.getBean(IAccountService.class);
+
+            accountService.run();
 
         }catch (Exception e){
             e.printStackTrace();

@@ -453,6 +453,13 @@ public class AnnotationApplicationContext extends AbstractApplicationContext {
             }
         }
 
+        //生成完成后再注入一次bean
+        notFinishedObject.forEach((key,bean)->{
+
+            injectionAutowired(key,bean);
+
+        });
+
     }
 
 

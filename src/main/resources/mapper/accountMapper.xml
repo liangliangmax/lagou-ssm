@@ -1,15 +1,8 @@
 <mapper namespace = "com.liang.ssm_demo.mapper.AccountMapper">
 
+	<select id="findAll" resultType = "com.liang.ssm_demo.entity.Account">
 
-	<select id="getOne" parameterType = "com.liang.mybatis.test.entity.User" resultType = "com.liang.mybatis.test.entity.User">
-
-		select * from user where id = #{id} and username = #{username}
-	</select>
-
-
-	<select id="getList" resultType = "com.liang.mybatis.test.entity.User">
-
-		select * from user
+		select * from account
 	</select>
 
 	<insert id="insert" parameterType = "com.liang.mybatis.test.entity.User">
