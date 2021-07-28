@@ -121,6 +121,7 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
     }
 
 
+
     @Override
     public Object getBean(String beanName) {
 
@@ -174,6 +175,11 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
         }
 
         return null;
+    }
+
+    @Override
+    public Map<String, Object> getBeans() {
+        return singletonObject;
     }
 
     @Override
