@@ -31,13 +31,13 @@
 
    
 
-   ​		由于这里是一个简版的spring容器，没有使用factoryBean来生成bean，（ 正常的mybatis和spring整合参考https://www.cnblogs.com/lanqingzhou/p/13592232.html这个文章），这个简单的容器缺失其他功能，所以需要另外想办法。
+   ​		由于这里是一个简版的spring容器，没有使用factoryBean来生成bean，（ 正常的mybatis和spring整合参考https://www.cnblogs.com/lanqingzhou/p/13592232.html这个文章）,  这个简单的容器缺失其他功能，所以需要另外想办法。
 
    
 
-    		既然mybatis的功能是完整的，意味着SqlSessionFactoryBuilder是好用的，也能创建出sqlSessionFactory，里面也有statement对象，那么只需要把SqlSessionFactory当做一个bean托管到spring容器进行生成，这样在spring启动时候，就会触发mybatis核心功能的加载，进而触发解析xml等动作。
+    		既然mybatis的功能是完整的，意味着SqlSessionFactoryBuilder是好用的，也能创建出sqlSessionFactory，里面也有statement对象，那么只需要把SqlSessionFactory当做一个bean托管到spring容器进行生成，这样在spring启动时候，就会触发mybatis核心功能的加载，进而触发解析xml等动作。于是在ssm_demo项目中创建了自定义的bean。
 
-   于是在ssm_demo项目中创建了自定义的bean
+   
 
    ```java
    @Configuration
