@@ -71,7 +71,7 @@
      
 
      ​		等到之前的bean都生成完毕，最后用cglib生成指定接口的代理类，填加到spring容器中。
-   
+
      ```java
      //生成mapper代理对象
      Set<Class<?>> classes = getClasses();
@@ -82,11 +82,11 @@
          if(aClass.isAnnotationPresent(Mapper.class)){
              doCreateMapperProxy(GenerateBeanNameUtil.generateBeanName(aClass),aClass);
          }
-  }
+     }
      ```
 
      ​		代理对象生成的过程是
-   
+
      ```java
      public class MapperProxyFactory {
      
@@ -112,20 +112,49 @@
                  }
              });
          }
-  }
+     }
      ```
 
-     ​		当service调用mapper时候，会通过sqlSessionFactory.openSession().getMapper(obj) 来获取具体的代理对象，然后调用mybatis的方法来执行sql。
+     ​		当service调用mapper时候，会通过sqlSessionFactory.openSession().getMapper(obj) 来获取具体的代理对象，这里的obj就是传入的接口类型，mybatis会根据接口的class去搜索对应的mappedStatement对象，然后调用mybatis的方法来执行sql。
 
      
 
    - 然后是spring和springmvc的整合
 
-   
+        ​		整合springmvc最核心的就是dispatchServlet，需要在tomcat启动的时候就要加载这个类。整个spring容器的初始化也是有这个类调用的。
 
-   - 最后是和tomcat的整合
+        
+
+        ​		第一步就是配置web.xml,使这个servlet在tomcat启动时候就初始化。
+
+   ```xml
+   <!DOCTYPE web-app PUBLIC
+           "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+           "http://java.sun.com/dtd/web-app_2_3.dtd" >
    
-     
+   <web-app>
+       <display-name>Archetype Created Web Application</display-name>
+   
+   
+       <servlet>
+           <servlet-name>liangmvc</servlet-name>
+           <servlet-class>com.liang.spring.webmvc.servlet.DispatcherServlet</servlet-class>
+           <init-param>
+               <param-name>contextConfigLocation</param-name>
+               <param-value>classpath:springmvc.properties</param-value>
+           </init-param>
+           <load-on-startup>1</load-on-startup>
+       </servlet>
+       <servlet-mapping>
+           <servlet-name>liangmvc</servlet-name>
+           <url-pattern>/*</url-pattern>
+       </servlet-mapping>
+   
+   
+   </web-app>
+   ```
+
+   
 
 
 
