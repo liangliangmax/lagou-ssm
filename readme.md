@@ -1,3 +1,5 @@
+
+
 # 自定义ssm框架总结
 
 ### 目录
@@ -64,17 +66,20 @@
     }
      ```
 
-     这样生成完成之后spring容器里面就会有sqlSessionFactory对象。
 
-     
 
-     那怎样才能扫描到接口呢，这里只能是在spring容器初始化的时候最后生成指定路径下的mapper接口的代理类，因为如果一开始就生成代理类的话由于sqlSessionFactory还没创建出来，代理类中需要sqlSessionFactory，所以没办法一开始就生成接口代理类。
+​				这样生成完成之后spring容器里面就会有sqlSessionFactory对象。
 
-     
 
-     等到之前的bean都生成完毕，最后用cglib生成指定接口的代理类，填加到spring容器中。
-   
-     ```java
+
+​				那怎样才能扫描到接口呢，这里只能是在spring容器初始化的时候最后生成指定路径下的mapper接口的代理类，因为如果一开始就生成代理类的话由于sqlSessionFactory还没创建出来，代理类中需要sqlSessionFactory，所以没办法一开始就生成接口代理类。
+
+​     			
+
+​				等到之前的bean都生成完毕，最后用cglib生成指定接口的代理类，填加到spring容器中。
+
+
+```
      //生成mapper代理对象
      Set<Class<?>> classes = getClasses();
      
@@ -85,11 +90,12 @@
              doCreateMapperProxy(GenerateBeanNameUtil.generateBeanName(aClass),aClass);
          }
     }
-     ```
+```
 
-     代理对象生成的过程是
-   
-     ```java
+​				
+
+​				代理对象生成的过程是
+
      public class MapperProxyFactory {
      
          private SqlSessionFactory sqlSessionFactory;
@@ -115,11 +121,11 @@
              });
          }
     }
-     ```
 
-     当service调用mapper时候，会通过sqlSessionFactory.openSession().getMapper(obj) 来获取具体的代理对象，这里的obj就是传入的接口类型，mybatis会根据接口的class去搜索对应的mappedStatement对象，然后调用mybatis的方法来执行sql。
 
-     
+​      			当service调用mapper时候，会通过sqlSessionFactory.openSession().getMapper(obj) 来获取具体的代理对象，这里的obj就是传入的接口类型，mybatis会根据接口的class去搜索对应的mappedStatement对象，然后调用mybatis的方法来执行sql。
+
+
 
    - 然后是spring和springmvc的整合
 
@@ -128,7 +134,7 @@
         
 
         第一步就是配置web.xml,使这个servlet在tomcat启动时候就初始化。
-   
+
    ```xml
    <!DOCTYPE web-app PUBLIC
            "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
@@ -150,11 +156,11 @@
        </servlet-mapping>
 </web-app>
    ```
-   
+
    ​				
-   
+
    ​		在DispatcherServlet中初始化调用init方法，里面会执行相关代码
-   
+
    ```java
    @Override
    public void init(ServletConfig config) throws ServletException {
