@@ -27,95 +27,108 @@
 
    - 首先是spring和mybatis的整合
 
-     mybatis启动时候会自己解析xml生成MappedStatement，这个是最终运行的sql对象，这里的关键就是如何将这些代理对象添加为spring的bean对象。
+      		mybatis启动时候会自己解析xml生成MappedStatement，这个是最终运行的sql对象，这里的关键就是如何将这些代理对象添加为spring的bean对象。
+
+     
+
+     ​		由于这里是一个简版的spring容器，没有使用factoryBean来生成bean，（ 正常的mybatis和spring整合参考https://www.cnblogs.com/lanqingzhou/p/13592232.html这个文章）,  这个简单的容器缺失其他功能，所以需要另外想办法。
+
+     
+
+     ​		既然mybatis的功能是完整的，意味着SqlSessionFactoryBuilder是好用的，也能创建出sqlSessionFactory，里面也有statement对象，那么只需要把SqlSessionFactory当做一个bean托管到spring容器进行生成，这样在spring启动时候，就会触发mybatis核心功能的加载，进而触发解析xml等动作。于是在ssm_demo项目中创建了自定义的bean。
+
+     ​	
+
+     ```java
+     @Configuration
+     public class SqlSessionFactoryConfig {
+         @Value("${mybatis.mapper.configPath}")
+         private String mapperScanPackage;
+     
+         @Autowired
+         private DataSource dataSource;
+         
+         @Bean
+         public SqlSessionFactory sqlSessionFactory() throws Exception {
+             if(mapperScanPackage.startsWith("classpath:")){
+                 mapperScanPackage = mapperScanPackage.replace("classpath:","");
+             }
+             InputStream resourceAsStream = Resources.getResourceAsStream(mapperScanPackage);
+             SqlSessionFactoryBuilder sqlSessionFactoryBuilder = new SqlSessionFactoryBuilder();
+             sqlSessionFactoryBuilder.setDataSource(dataSource);
+             SqlSessionFactory sqlSessionFactory = sqlSessionFactoryBuilder.build(resourceAsStream);
+             return sqlSessionFactory;
+         }
+     }
+     ```
+
+     ​		这样生成完成之后spring容器里面就会有sqlSessionFactory对象。
+
+     
+
+     ​		那怎样才能扫描到接口呢，这里只能是在spring容器初始化的时候最后生成指定路径下的mapper接口的代理类，因为如果一开始就生成代理类的话由于sqlSessionFactory还没创建出来，代理类中需要sqlSessionFactory，所以没办法一开始就生成接口代理类。
+
+     
+
+     ​		等到之前的bean都生成完毕，最后用cglib生成指定接口的代理类，填加到spring容器中。
+   
+     ```java
+     //生成mapper代理对象
+     Set<Class<?>> classes = getClasses();
+     
+     for (Class<?> aClass : classes) {
+     
+         //如果是mapper的类，是不能被实例化出来的，因为没有实现类，需要直接创建代理类
+         if(aClass.isAnnotationPresent(Mapper.class)){
+             doCreateMapperProxy(GenerateBeanNameUtil.generateBeanName(aClass),aClass);
+         }
+  }
+     ```
+
+     ​		代理对象生成的过程是
+   
+     ```java
+     public class MapperProxyFactory {
+     
+         private SqlSessionFactory sqlSessionFactory;
+     
+         public void setSqlSessionFactory(SqlSessionFactory sqlSessionFactory) {
+             this.sqlSessionFactory = sqlSessionFactory;
+         }
+     
+         /**
+          * 使用cglib动态代理生成代理对象
+          * @param obj 委托对象
+          * @return
+          */
+         public Object getCglibProxy(Class obj) {
+             return  Enhancer.create(obj, new MethodInterceptor() {
+                 @Override
+                 public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+                     Object result = null;
+                     Object mapper = sqlSessionFactory.openSession().getMapper(obj);
+                     result = method.invoke(mapper,objects);
+                     return result;
+                 }
+             });
+         }
+  }
+     ```
+
+     ​		当service调用mapper时候，会通过sqlSessionFactory.openSession().getMapper(obj) 来获取具体的代理对象，然后调用mybatis的方法来执行sql。
+
+     
+
+   - 然后是spring和springmvc的整合
 
    
 
-   ​		由于这里是一个简版的spring容器，没有使用factoryBean来生成bean，（ 正常的mybatis和spring整合参考https://www.cnblogs.com/lanqingzhou/p/13592232.html这个文章）,  这个简单的容器缺失其他功能，所以需要另外想办法。
-
+   - 最后是和tomcat的整合
    
+     
 
-    		既然mybatis的功能是完整的，意味着SqlSessionFactoryBuilder是好用的，也能创建出sqlSessionFactory，里面也有statement对象，那么只需要把SqlSessionFactory当做一个bean托管到spring容器进行生成，这样在spring启动时候，就会触发mybatis核心功能的加载，进而触发解析xml等动作。于是在ssm_demo项目中创建了自定义的bean。
 
-   
 
-   ```java
-   @Configuration
-   public class SqlSessionFactoryConfig {
-       @Value("${mybatis.mapper.configPath}")
-       private String mapperScanPackage;
-   
-       @Autowired
-       private DataSource dataSource;
-       
-       @Bean
-       public SqlSessionFactory sqlSessionFactory() throws Exception {
-           if(mapperScanPackage.startsWith("classpath:")){
-               mapperScanPackage = mapperScanPackage.replace("classpath:","");
-           }
-           InputStream resourceAsStream = Resources.getResourceAsStream(mapperScanPackage);
-           SqlSessionFactoryBuilder sqlSessionFactoryBuilder = new SqlSessionFactoryBuilder();
-           sqlSessionFactoryBuilder.setDataSource(dataSource);
-           SqlSessionFactory sqlSessionFactory = sqlSessionFactoryBuilder.build(resourceAsStream);
-           return sqlSessionFactory;
-       }
-   }
-   ```
-
-   这样生成完成之后spring容器里面就会有sqlSessionFactory对象。
-
-   
-
-   ​		那怎样才能扫描到接口呢，这里只能是在spring容器初始化的时候最后生成指定路径下的mapper接口的代理类，因为如果一开始就生成代理类的话由于sqlSessionFactory还没创建出来，代理类中需要sqlSessionFactory，所以没办法一开始就生成接口代理类。
-
-   ​		等到之前的bean都生成完毕，最后用cglib生成指定接口的代理类，填加到spring容器中。
-
-   ```java
-   //生成mapper代理对象
-   Set<Class<?>> classes = getClasses();
-   
-   for (Class<?> aClass : classes) {
-   
-       //如果是mapper的类，是不能被实例化出来的，因为没有实现类，需要直接创建代理类
-       if(aClass.isAnnotationPresent(Mapper.class)){
-           doCreateMapperProxy(GenerateBeanNameUtil.generateBeanName(aClass),aClass);
-       }
-   }
-   ```
-
-   ​		代理对象生成的过程是
-
-```java
-public class MapperProxyFactory {
-
-    private SqlSessionFactory sqlSessionFactory;
-
-    public void setSqlSessionFactory(SqlSessionFactory sqlSessionFactory) {
-        this.sqlSessionFactory = sqlSessionFactory;
-    }
-
-    /**
-     * 使用cglib动态代理生成代理对象
-     * @param obj 委托对象
-     * @return
-     */
-    public Object getCglibProxy(Class obj) {
-        return  Enhancer.create(obj, new MethodInterceptor() {
-            @Override
-            public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
-                Object result = null;
-                Object mapper = sqlSessionFactory.openSession().getMapper(obj);
-                result = method.invoke(mapper,objects);
-                return result;
-            }
-        });
-    }
-}
-```
-
-​	
-
-​		当service调用mapper时候，会通过sqlSessionFactory.openSession().getMapper(obj) 来获取具体的代理对象，然后调用mybatis的方法来执行sql
 
 
 
