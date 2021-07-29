@@ -27,7 +27,7 @@
 
    - 首先是spring和mybatis的整合
 
-      		mybatis启动时候会自己解析xml生成MappedStatement，这个是最终运行的sql对象，这里的关键就是如何将这些代理对象添加为spring的bean对象。
+     ​		mybatis启动时候会自己解析xml生成MappedStatement，这个是最终运行的sql对象，这里的关键就是如何将这些代理对象添加为spring的bean对象。
 
      
 
@@ -131,11 +131,8 @@
    <!DOCTYPE web-app PUBLIC
            "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
            "http://java.sun.com/dtd/web-app_2_3.dtd" >
-   
    <web-app>
        <display-name>Archetype Created Web Application</display-name>
-   
-   
        <servlet>
            <servlet-name>liangmvc</servlet-name>
            <servlet-class>com.liang.spring.webmvc.servlet.DispatcherServlet</servlet-class>
@@ -149,12 +146,55 @@
            <servlet-name>liangmvc</servlet-name>
            <url-pattern>/*</url-pattern>
        </servlet-mapping>
-   
-   
    </web-app>
    ```
 
+   ​				
+
+   ​				在DispatcherServlet中初始化调用init方法，里面会执行相关代码
+
+   ```java
+   @Override
+   public void init(ServletConfig config) throws ServletException {
    
+       //加载文件
+       String contextConfigLocation = config.getInitParameter("contextConfigLocation");
+   
+       //初始化容器
+       initContext(contextConfigLocation);
+   
+       //构造一个HandlerMapping处理器映射器，将配置好的url和Method建立映射关系
+       initHandlerMapping();
+   
+       //初始化interceptor
+       initInterceptor();
+   
+   }
+   ```
+
+
+
+​						初始化容器就是直接调用spring-core里面的方法，传入扫描的包进行容器加载
+
+```
+   private void initContext(String contextConfigLocation) {
+        try {
+            if(StringUtils.isNotBlank(contextConfigLocation)){
+                if(contextConfigLocation.startsWith("classpath:")){
+                    contextConfigLocation = contextConfigLocation.replaceAll("classpath:","");
+                }
+            }
+            InputStream resourceAsStream = Resources.getResourceAsStream(contextConfigLocation);
+            Properties properties = new Properties();
+            properties.load(resourceAsStream);
+            new AnnotationApplicationContext(properties.getProperty("scanPackage"));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+```
+
+
 
 
 
