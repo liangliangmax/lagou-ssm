@@ -226,26 +226,15 @@ public class DispatcherServlet extends HttpServlet {
 
         try {
             if(StringUtils.isNotBlank(contextConfigLocation)){
-
                 if(contextConfigLocation.startsWith("classpath:")){
                     contextConfigLocation = contextConfigLocation.replaceAll("classpath:","");
                 }
-
             }
 
             InputStream resourceAsStream = Resources.getResourceAsStream(contextConfigLocation);
-
-
             Properties properties = new Properties();
-
             properties.load(resourceAsStream);
-
-            AnnotationApplicationContext annotationApplicationContext = new AnnotationApplicationContext(properties.getProperty("scanPackage"));
-
-//            IAccountService accountService = (IAccountService)annotationApplicationContext.getBean(IAccountService.class);
-//
-//
-//            accountService.queryAll();
+            new AnnotationApplicationContext(properties.getProperty("scanPackage"));
         }catch (Exception e){
             e.printStackTrace();
         }

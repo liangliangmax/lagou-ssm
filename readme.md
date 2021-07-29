@@ -150,9 +150,9 @@
    ```
 
    ​				
-
+   
    ​				在DispatcherServlet中初始化调用init方法，里面会执行相关代码
-
+   
    ```java
    @Override
    public void init(ServletConfig config) throws ServletException {
@@ -172,29 +172,93 @@
    }
    ```
 
-
+​						
 
 ​						初始化容器就是直接调用spring-core里面的方法，传入扫描的包进行容器加载
 
+​				
+
+```java
+//初始化容器
+private void initContext(String contextConfigLocation) {
+
+    try {
+        if(StringUtils.isNotBlank(contextConfigLocation)){
+            if(contextConfigLocation.startsWith("classpath:")){
+                contextConfigLocation = contextConfigLocation.replaceAll("classpath:","");
+            }
+        }
+
+        InputStream resourceAsStream = Resources.getResourceAsStream(contextConfigLocation);
+        Properties properties = new Properties();
+        properties.load(resourceAsStream);
+        new AnnotationApplicationContext(properties.getProperty("scanPackage"));
+    }catch (Exception e){
+        e.printStackTrace();
+    }
+
+}
 ```
-   private void initContext(String contextConfigLocation) {
-        try {
-            if(StringUtils.isNotBlank(contextConfigLocation)){
-                if(contextConfigLocation.startsWith("classpath:")){
-                    contextConfigLocation = contextConfigLocation.replaceAll("classpath:","");
+
+
+
+​						等容器初始化完成之后，会将所有的@Controller的bean都取出来，生成handler，每一个handler里面包含一个路径，一个要执行的方法和执行的对象，参数列表，相当于用url进行handler匹配，匹配上了就处理
+
+```
+private void initHandlerMapping() {
+
+    AnnotationApplicationContext applicationContext = (AnnotationApplicationContext) IocUtil.getApplicationContext();
+
+    for (Map.Entry<String, Object> stringObjectEntry : applicationContext.getBeans().entrySet()) {
+
+        Class<?> aClass = stringObjectEntry.getValue().getClass();
+
+        if(!aClass.isAnnotationPresent(Controller.class)){
+            continue;
+        }
+
+        String baseUrl = "";
+
+        if(aClass.isAnnotationPresent(RequestMapping.class)){
+            RequestMapping annotation = aClass.getAnnotation(RequestMapping.class);
+            baseUrl = annotation.value();
+        }
+
+        Method[] declaredMethods = aClass.getDeclaredMethods();
+
+        for (Method declaredMethod : declaredMethods) {
+            if(!declaredMethod.isAnnotationPresent(RequestMapping.class)){
+                continue;
+            }
+
+            RequestMapping annotation = declaredMethod.getAnnotation(RequestMapping.class);
+            String subUrl = annotation.value();
+            String fullUrl = baseUrl + subUrl;
+
+            //把method所有信息封装为handler
+            Handler handler = new Handler(stringObjectEntry.getValue(),declaredMethod, Pattern.compile(fullUrl));
+
+            //计算方法参数位置
+            Parameter[] parameters = declaredMethod.getParameters();
+            for (int i = 0; i < parameters.length; i++) {
+
+                Parameter parameter = parameters[i];
+
+                if(parameter.getType() == HttpServletRequest.class || parameter.getType() == HttpServletResponse.class){
+                    //如果是request和response对象，那么参数名称写httpServletRequest和httpServletResponse
+                    handler.getParamIndexMapping().put(parameter.getType().getSimpleName(),i);
+                }else {
+                    handler.getParamIndexMapping().put(parameter.getName(),i);
                 }
             }
-            InputStream resourceAsStream = Resources.getResourceAsStream(contextConfigLocation);
-            Properties properties = new Properties();
-            properties.load(resourceAsStream);
-            new AnnotationApplicationContext(properties.getProperty("scanPackage"));
-        }catch (Exception e){
-            e.printStackTrace();
+
+            handlerMapping.add(handler);
         }
+
     }
+
+}
 ```
-
-
 
 
 
