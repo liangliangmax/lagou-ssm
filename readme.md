@@ -66,5 +66,58 @@
 
    
 
-3. 启动运行
+   ​		那怎样才能扫描到接口呢，这里只能是在spring容器初始化的时候最后生成指定路径下的mapper接口的代理类，因为如果一开始就生成代理类的话由于sqlSessionFactory还没创建出来，代理类中需要sqlSessionFactory，所以没办法一开始就生成接口代理类。
+
+   ​		等到之前的bean都生成完毕，最后用cglib生成指定接口的代理类，填加到spring容器中。
+
+   ```java
+   //生成mapper代理对象
+   Set<Class<?>> classes = getClasses();
+   
+   for (Class<?> aClass : classes) {
+   
+       //如果是mapper的类，是不能被实例化出来的，因为没有实现类，需要直接创建代理类
+       if(aClass.isAnnotationPresent(Mapper.class)){
+           doCreateMapperProxy(GenerateBeanNameUtil.generateBeanName(aClass),aClass);
+       }
+   }
+   ```
+
+   ​		代理对象生成的过程是
+
+```java
+public class MapperProxyFactory {
+
+    private SqlSessionFactory sqlSessionFactory;
+
+    public void setSqlSessionFactory(SqlSessionFactory sqlSessionFactory) {
+        this.sqlSessionFactory = sqlSessionFactory;
+    }
+
+    /**
+     * 使用cglib动态代理生成代理对象
+     * @param obj 委托对象
+     * @return
+     */
+    public Object getCglibProxy(Class obj) {
+        return  Enhancer.create(obj, new MethodInterceptor() {
+            @Override
+            public Object intercept(Object o, Method method, Object[] objects, MethodProxy methodProxy) throws Throwable {
+                Object result = null;
+                Object mapper = sqlSessionFactory.openSession().getMapper(obj);
+                result = method.invoke(mapper,objects);
+                return result;
+            }
+        });
+    }
+}
+```
+
+​	
+
+​		当service调用mapper时候，会通过sqlSessionFactory.openSession().getMapper(obj) 来获取具体的代理对象，然后调用mybatis的方法来执行sql
+
+
+
+​	启动运行
 
