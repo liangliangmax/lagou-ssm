@@ -31,4 +31,13 @@ public class Account {
     public void setAccount(String account) {
         this.account = account;
     }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", account='" + account + '\'' +
+                '}';
+    }
 }
