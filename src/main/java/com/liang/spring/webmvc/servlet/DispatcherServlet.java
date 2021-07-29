@@ -5,6 +5,7 @@ import com.liang.spring.core.context.AnnotationApplicationContext;
 import com.liang.spring.core.context.ApplicationContext;
 import com.liang.spring.webmvc.annotation.Controller;
 import com.liang.spring.webmvc.annotation.RequestMapping;
+import com.liang.spring.webmvc.interceptor.IHandlerInterceptor;
 import com.liang.spring.webmvc.pojo.Handler;
 import com.liang.ssm_demo.service.IAccountService;
 import com.liang.ssm_demo.util.IocUtil;
@@ -31,6 +32,8 @@ public class DispatcherServlet extends HttpServlet {
 
     private List<Handler> handlerMapping = new ArrayList<>();
 
+    private List<IHandlerInterceptor> handlerInterceptors = new ArrayList<>();
+
     @Override
     public void init(ServletConfig config) throws ServletException {
 
@@ -43,10 +46,10 @@ public class DispatcherServlet extends HttpServlet {
         //构造一个HandlerMapping处理器映射器，将配置好的url和Method建立映射关系
         initHandlerMapping();
 
+        //初始化interceptor
+        initInterceptor();
+
     }
-
-
-
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -96,7 +99,26 @@ public class DispatcherServlet extends HttpServlet {
         paraValues[responseIndex] = resp;
 
         try {
+
+            //在方法调用前，执行拦截操作
+            if(!handlerInterceptors.isEmpty()){
+
+                for (IHandlerInterceptor handlerInterceptor : handlerInterceptors) {
+
+                    if(!handlerInterceptor.needFilter(handler)){
+                        continue;
+                    }
+
+                    boolean b = handlerInterceptor.preHandle(handler, req, resp);
+
+                    if(!b){
+                        return;
+                    }
+                }
+            }
+
             handler.getMethod().invoke(handler.getController(),paraValues);
+
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -107,6 +129,24 @@ public class DispatcherServlet extends HttpServlet {
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
+
+    //启动过程中，将所有IHandlerInterceptor的子类都扫描到容器中，然后从容器中将处理器都添加到处理器集合中
+    private void initInterceptor() {
+        AnnotationApplicationContext applicationContext = (AnnotationApplicationContext) IocUtil.getApplicationContext();
+
+        for (Map.Entry<String, Object> beanMap : applicationContext.getBeans().entrySet()) {
+
+            Object bean = beanMap.getValue();
+
+            if(bean instanceof IHandlerInterceptor){
+
+                handlerInterceptors.add((IHandlerInterceptor) bean);
+            }
+
+        }
+
+
+    }
 
 
 

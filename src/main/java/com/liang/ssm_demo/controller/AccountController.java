@@ -4,6 +4,7 @@ package com.liang.ssm_demo.controller;
 import com.liang.spring.core.annotation.Autowired;
 import com.liang.spring.webmvc.annotation.Controller;
 import com.liang.spring.webmvc.annotation.RequestMapping;
+import com.liang.spring.webmvc.annotation.Security;
 import com.liang.ssm_demo.entity.Account;
 import com.liang.ssm_demo.service.IAccountService;
 
@@ -19,6 +20,8 @@ public class AccountController {
     @Autowired
     private IAccountService accountService;
 
+
+    @Security(username = {"zhangsan"})
     @RequestMapping("/queryAll")
     public void queryAll(HttpServletRequest servletRequest, HttpServletResponse servletResponse){
 
