@@ -30,6 +30,7 @@ public class SecurityInterceptor implements IHandlerInterceptor {
     @Override
     public boolean preHandle(Handler handler, HttpServletRequest request, HttpServletResponse response) {
 
+        System.out.println("进行了权限拦截");
 
         try {
 
@@ -50,6 +51,8 @@ public class SecurityInterceptor implements IHandlerInterceptor {
                 for (String name : usernames) {
 
                     if(name.equalsIgnoreCase(username)){
+
+                        System.out.println("权限验证通过");
                         return true;
                     }
                 }
@@ -66,6 +69,8 @@ public class SecurityInterceptor implements IHandlerInterceptor {
                 for (String name : usernames) {
 
                     if(name.equalsIgnoreCase(username)){
+
+                        System.out.println("权限验证通过");
                         return true;
                     }
                 }
@@ -79,7 +84,7 @@ public class SecurityInterceptor implements IHandlerInterceptor {
         }
 
 
-        return true;
+        return false;
 
     }
 
